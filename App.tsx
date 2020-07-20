@@ -1,21 +1,37 @@
 import { StatusBar } from 'expo-status-bar';
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet } from 'react-native';
+import PlacesNavigator from './navigation/PlacesNavigator';
+import { AppLoading } from 'expo';
+import * as Font from 'expo-font';
+
+const fetchFonts = () => {
+	return Font.loadAsync({
+		'open-sans': require('./assets/fonts/OpenSans-Regular.ttf'),
+		'open-sans-bold': require('./assets/fonts/OpenSans-Bold.ttf'),
+	});
+};
 
 export default function App() {
-  return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
-  );
+	const [loading, setLoading] = useState<boolean>(true);
+
+	if (loading) {
+		return (
+			<AppLoading
+				startAsync={fetchFonts}
+				onFinish={setLoading.bind(App, false)}
+				onError={console.error}
+			/>
+		);
+	}
+	return <PlacesNavigator />;
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+	container: {
+		flex: 1,
+		backgroundColor: '#fff',
+		alignItems: 'center',
+		justifyContent: 'center',
+	},
 });
