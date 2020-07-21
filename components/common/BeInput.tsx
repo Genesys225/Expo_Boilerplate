@@ -1,7 +1,6 @@
 import React, { ReactNode, useReducer, useEffect } from 'react';
 import {
 	StyleSheet,
-	Text,
 	View,
 	TextInput,
 	TextInputProps,
@@ -11,7 +10,7 @@ import {
 import H1 from './H1';
 import BeText from './BeText';
 
-interface BeInputProps extends TextInputProps {
+export interface BeInputProps extends TextInputProps {
 	label: ReactNode;
 	style?: ViewStyle;
 	labelStyle?: TextStyle;
