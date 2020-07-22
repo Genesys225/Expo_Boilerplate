@@ -1,15 +1,10 @@
 import React, { useReducer, useCallback } from 'react';
-import {
-	StyleSheet,
-	View,
-	ScrollView,
-	KeyboardAvoidingView,
-} from 'react-native';
+import { StyleSheet, ScrollView, KeyboardAvoidingView } from 'react-native';
 import BeInput, { BeInputProps } from './BeInput';
 
 interface InputField {
 	name: string;
-	value: string;
+	initialValue?: string;
 	label?: string;
 	initialValidity?: boolean;
 	fieldProps?: Omit<
@@ -18,7 +13,7 @@ interface InputField {
 	>;
 }
 interface BeFormProps {
-	inputFields: InputField[];
+	inputFields: (InputField | string)[];
 	initialValidity?: boolean;
 }
 interface FormState {
@@ -59,15 +54,27 @@ const formReducer = (state: FormState, action: FormActions): FormState => {
 };
 
 const BeForm = (props: BeFormProps) => {
-	const { inputFields } = props;
+	const inputFields = props.inputFields.map((field) => {
+		if (typeof field === 'string') {
+			return {
+				name: field,
+				initialValue: '',
+				initialValidity: true,
+			};
+		} else return field;
+	});
 	const initialState = inputFields.reduce(
 		(initialState, field) => {
-			const { name, value, initialValidity } = field;
+			const { name, initialValue, initialValidity } = field;
 			return {
-				inputValues: { ...initialState.inputValues, [name]: value },
+				inputValues: {
+					...initialState.inputValues,
+					[name]: initialValue || '',
+				},
 				inputValidities: {
 					...initialState.inputValidities,
-					[name]: initialValidity,
+					[name]:
+						initialValidity === undefined ? true : initialValidity,
 				},
 				formIsValid: initialState.formIsValid,
 			};
@@ -93,13 +100,6 @@ const BeForm = (props: BeFormProps) => {
 		[dispatcher]
 	);
 
-	const FormGroup = (props: BeInputProps) => {
-		return (
-			<View>
-				<BeInput {...props}></BeInput>
-			</View>
-		);
-	};
 	return (
 		<KeyboardAvoidingView
 			style={styles.kbAvoid}
@@ -107,15 +107,15 @@ const BeForm = (props: BeFormProps) => {
 			keyboardVerticalOffset={100}
 		>
 			<ScrollView>
-				{inputFields.map((field, index) => {
+				{inputFields.map((field) => {
 					const label =
 						field.label === undefined
 							? field.name[0].toUpperCase() + field.name.slice(1)
 							: field.label;
 					return (
-						<FormGroup
+						<BeInput
 							name={field.name}
-							initialValue={field.value}
+							initialValue={field.initialValue}
 							initialValidity={field.initialValidity}
 							key={field.name}
 							label={label}
@@ -124,7 +124,6 @@ const BeForm = (props: BeFormProps) => {
 						/>
 					);
 				})}
-				;
 			</ScrollView>
 		</KeyboardAvoidingView>
 	);

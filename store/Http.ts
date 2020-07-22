@@ -1,23 +1,56 @@
 type GetParamsObj = {
 	[headerName: string]: string | number;
 };
+type HeadersObj = {
+	[headerName: string]: string;
+};
 export class Http {
-	baseUrl: string;
-	baseHeaders: {
+	private _baseUrl: string;
+	private _baseHeaders: {
 		[headerName: string]: string;
 	};
-	defaultParams: {
-		[headerName: string]: string | number;
+	private _baseParams: {
+		[paramName: string]: string | number;
 	};
 
-	constructor(baseUrl: string, baseHeaders = {}, defaultParams = {}) {
-		this.baseUrl = baseUrl;
-		this.baseHeaders = baseHeaders;
-		this.defaultParams = defaultParams;
+	constructor(baseUrl: string, baseHeaders = {}, baseParams = {}) {
+		this._baseUrl = baseUrl;
+		this._baseHeaders = baseHeaders;
+		this._baseParams = baseParams;
 	}
 
+	get baseUrl() {
+		return this._baseUrl;
+	}
+
+	get baseHeaders() {
+		return this._baseHeaders;
+	}
+
+	setBaseParams(
+		arg0: (arg0: GetParamsObj, arg1: string) => GetParamsObj | GetParamsObj
+	) {
+		if (typeof arg0 === 'function')
+			this._baseParams = arg0(this._baseParams, this._baseUrl);
+		else if (typeof arg0 === 'object') this._baseParams = arg0;
+		else return false;
+		return this;
+	}
+
+	setBaseHeaders(
+		arg0: (arg0: HeadersObj, arg1: string) => HeadersObj | HeadersObj
+	) {
+		if (typeof arg0 === 'function')
+			this._baseHeaders = arg0(this._baseHeaders, this._baseUrl);
+		else if (typeof arg0 === 'object') this._baseHeaders = arg0;
+		else return false;
+		return this;
+	}
+
+	setObject() {}
+
 	private urlHelper(url: string, getParamsObj: GetParamsObj = {}) {
-		const params = { ...this.defaultParams, ...getParamsObj };
+		const params = { ...this._baseParams, ...getParamsObj };
 		const paramsKeys = Object.keys(params);
 		if (paramsKeys.length > 0) {
 			const paramsQuery = paramsKeys.reduce((paramsQuery, paramKey) => {
@@ -27,34 +60,34 @@ export class Http {
 			}, '?');
 			return url.match(/^http/)
 				? url + paramsQuery
-				: this.baseUrl + url + paramsQuery;
+				: this._baseUrl + url + paramsQuery;
 		}
-		return url.match(/^http/) ? url : this.baseUrl + url;
+		return url.match(/^http/) ? url : this._baseUrl + url;
 	}
 
-	get(url: string, getParamsObj = {}) {
+	public get(url: string, getParamsObj = {}) {
 		url = this.urlHelper(url, getParamsObj);
 		return this.handleRequest(url, {
-			headers: this.baseHeaders,
+			headers: this._baseHeaders,
 		});
 	}
 
-	post(url: string, body: { [key: string]: any }, getParamsObj = {}) {
+	public post(url: string, body: { [key: string]: any }, getParamsObj = {}) {
 		url = this.urlHelper(url, getParamsObj);
 		return this.handleRequest(url, this.patchOrPost('POST', body));
 	}
 
-	patch(url: string, body: { [key: string]: any }, getParamsObj = {}) {
+	public patch(url: string, body: { [key: string]: any }, getParamsObj = {}) {
 		url = this.urlHelper(url, getParamsObj);
 		console.log(url);
 		return this.handleRequest(url, this.patchOrPost('PATCH', body));
 	}
 
-	delete(url: string, getParamsObj = {}) {
+	public delete(url: string, getParamsObj = {}) {
 		url = this.urlHelper(url, getParamsObj);
 		return this.handleRequest(url, {
 			method: 'DELETE',
-			headers: this.baseHeaders,
+			headers: this._baseHeaders,
 		});
 	}
 
@@ -84,7 +117,7 @@ export class Http {
 		return {
 			method,
 			headers: {
-				...this.baseHeaders,
+				...this._baseHeaders,
 				'Content-Type': 'application/json',
 			},
 			body: JSON.stringify({ ...body }),
