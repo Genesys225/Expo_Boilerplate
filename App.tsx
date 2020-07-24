@@ -4,6 +4,8 @@ import { StyleSheet } from 'react-native';
 import PlacesNavigator from './navigation/PlacesNavigator';
 import { AppLoading } from 'expo';
 import * as Font from 'expo-font';
+import { Provider } from 'react-redux';
+import configureStore from './store/configureStore';
 
 const fetchFonts = () => {
 	return Font.loadAsync({
@@ -24,7 +26,11 @@ export default function App() {
 			/>
 		);
 	}
-	return <PlacesNavigator />;
+	return (
+		<Provider store={configureStore()}>
+			<PlacesNavigator />
+		</Provider>
+	);
 }
 
 const styles = StyleSheet.create({
