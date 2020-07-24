@@ -3,7 +3,7 @@ import {
 	AUTHENTICATE,
 	AuthActionTypes,
 	LOGOUT,
-} from './../../models/authTypes';
+} from '../types/authTypes';
 
 const initialState = {
 	token: null,

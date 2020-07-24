@@ -1,56 +1,29 @@
-import React, { useReducer, useCallback } from 'react';
-import { StyleSheet, ScrollView, KeyboardAvoidingView } from 'react-native';
+import React, { useCallback } from 'react';
+import {
+	StyleSheet,
+	ScrollView,
+	KeyboardAvoidingView,
+	View,
+	ViewStyle,
+} from 'react-native';
 import BeInput, { BeInputProps } from './BeInput';
+import MainButton from './MainButton';
+import { useFormReducer, FormState } from '../hooks/useFormReducer';
 
-interface InputField {
-	name: string;
-	initialValue?: string;
-	label?: string;
+type OnSubmit = (formState: FormState) => any;
+
+type BeFormProps = {
+	inputFields: (BeInputProps | string)[];
+	confirmText?: string;
+	clearText?: string;
 	initialValidity?: boolean;
-	fieldProps?: Omit<
-		BeInputProps,
-		'onInput' | 'name' | 'initialValidity' | 'initialValue'
-	>;
-}
-interface BeFormProps {
-	inputFields: (InputField | string)[];
-	initialValidity?: boolean;
-}
-interface FormState {
-	inputValues: {
-		[name: string]: string;
+	style?: ViewStyle;
+	actionContainer?: {
+		containerStyle?: ViewStyle;
+		confirmStyle?: ViewStyle;
+		clearStyle?: ViewStyle;
 	};
-	inputValidities: {
-		[name: string]: boolean;
-	};
-	formIsValid: boolean;
-}
-
-type FormActions = {
-	type: 'UPDATE_INPUT';
-	payload: {
-		text: string;
-		name: string;
-		isValid: boolean;
-	};
-};
-
-const formIsValid = (state: FormState) =>
-	Object.values(state.inputValidities).indexOf(false) === -1;
-
-const formReducer = (state: FormState, action: FormActions): FormState => {
-	switch (action.type) {
-		case 'UPDATE_INPUT':
-			const updatedState: FormState = { ...state };
-			const name = action.payload.name;
-			updatedState.inputValues[name] = action.payload.text;
-			updatedState.inputValidities[name] = action.payload.isValid;
-			updatedState.formIsValid = formIsValid(state);
-			return updatedState;
-
-		default:
-			return state;
-	}
+	onSubmit: OnSubmit;
 };
 
 const BeForm = (props: BeFormProps) => {
@@ -60,8 +33,18 @@ const BeForm = (props: BeFormProps) => {
 				name: field,
 				initialValue: '',
 				initialValidity: true,
+				label: field[0].toUpperCase() + field.slice(1),
+				fieldProps: { required: true },
 			};
-		} else return field;
+		} else {
+			field.label =
+				field.label === undefined
+					? field.name[0].toUpperCase() + field.name.slice(1)
+					: field.label;
+			field.required =
+				field.required === undefined ? true : field.required;
+			return field;
+		}
 	});
 	const initialState = inputFields.reduce(
 		(initialState, field) => {
@@ -88,17 +71,35 @@ const BeForm = (props: BeFormProps) => {
 					: props.initialValidity,
 		}
 	);
-	const [formState, dispatcher] = useReducer(formReducer, initialState);
+	const [formState, formDispatch] = useFormReducer(initialState);
+
+	const submitHandler = useCallback(() => {
+		if (formState.formIsValid) {
+			return props.onSubmit(formState);
+		} else {
+			return false;
+		}
+	}, [formState]);
 
 	const inputChangeHandler = useCallback(
 		(name: string, text: string, isValid: boolean) => {
-			dispatcher({
+			formDispatch({
 				type: 'UPDATE_INPUT',
 				payload: { text, name, isValid },
 			});
 		},
-		[dispatcher]
+		[formDispatch]
 	);
+
+	const clearFormHandler = useCallback(() => {
+		formDispatch({
+			type: 'CLEAR_FORM',
+			payload: initialState,
+		});
+	}, [formDispatch]);
+
+	const confirmText =
+		props.confirmText === undefined ? 'Submit' : props.confirmText;
 
 	return (
 		<KeyboardAvoidingView
@@ -106,24 +107,29 @@ const BeForm = (props: BeFormProps) => {
 			behavior="height"
 			keyboardVerticalOffset={100}
 		>
-			<ScrollView>
+			<ScrollView style={{ ...styles.form, ...props.style }}>
 				{inputFields.map((field) => {
-					const label =
-						field.label === undefined
-							? field.name[0].toUpperCase() + field.name.slice(1)
-							: field.label;
 					return (
 						<BeInput
+							{...field}
 							name={field.name}
 							initialValue={field.initialValue}
 							initialValidity={field.initialValidity}
 							key={field.name}
-							label={label}
+							label={field.label}
 							onInput={inputChangeHandler}
-							{...field.fieldProps}
 						/>
 					);
 				})}
+				<View>
+					<MainButton title={confirmText} onPress={submitHandler} />
+					{props.clearText && (
+						<MainButton
+							title={confirmText}
+							onPress={clearFormHandler}
+						/>
+					)}
+				</View>
 			</ScrollView>
 		</KeyboardAvoidingView>
 	);
@@ -132,7 +138,7 @@ export default BeForm;
 
 const styles = StyleSheet.create({
 	form: {
-		margin: 20,
+		margin: 30,
 	},
 	kbAvoid: {
 		flex: 1,

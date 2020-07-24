@@ -5,7 +5,9 @@ import reduxThunk from 'redux-thunk';
 
 export type RootState = ReturnType<typeof rootReducer>;
 
-const rootReducer = combineReducers({});
+const rootReducer = combineReducers({
+	auth: authReducer,
+});
 
 export default function configureStore() {
 	const store = createStore(
